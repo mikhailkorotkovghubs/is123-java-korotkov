@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Все операции | Семейный Бюджет</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f8f9fc;
+      --card-bg: #ffffff;
+      --text-color: #5a5c69;
+    }
+    body.dark-mode {
+      --bg-color: #1a1a2e;
+      --card-bg: #16213e;
+      --text-color: #e0e0e0;
+    }
+    body {
+      background-color: var(--bg-color);
+      font-family: 'Segoe UI', sans-serif;
+      color: var(--text-color);
+      transition: 0.3s;
+    }
+    body.dark-mode .card,
+    body.dark-mode .table {
+      background-color: var(--card-bg);
+      color: var(--text-color);
+      border-color: #0f3460;
+    }
+    .navbar-custom {
+      background: linear-gradient(135deg, #4e73df, #224abe);
+    }
+    .navbar-brand {
+      color: white !important;
+    }
+    .table-container {
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+      padding: 20px;
+    }
+    .table thead th {
+      border-top: none;
+      border-bottom: 2px solid #e3e6f0;
+      color: #4e73df;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+    .table-hover tbody tr:hover {
+      background-color: rgba(78, 115, 223, 0.05);
+      cursor: pointer;
+    }
+    .badge-category {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-custom mb-4">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="/dashboard">
+      <i class="fas fa-arrow-left me-2"></i>Назад
+    </a>
+    <span class="navbar-text text-white fw-bold">История операций</span>
+    <div class="ms-auto">
+      <button class="btn btn-outline-light btn-sm" onclick="document.body.classList.toggle('dark-mode')">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="container-fluid px-4">
+  <div class="table-container">
+    <!-- ПАНЕЛЬ ФИЛЬТРОВ -->
+    <div class="row g-3 mb-4 align-items-end">
+      <!-- Фильтр Месяц -->
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Период (Месяц)</label>
+        <form method="get" id="periodForm" class="d-flex gap-2">
+          <input type="hidden" name="categoryId" th:value="${param.categoryId}">
+          <input type="hidden" name="userId" th:value="${param.userId}">
+          <input type="hidden" name="year" id="filterYear" th:value="${selectedYear != null ? selectedYear : ''}">
+          <input type="hidden" name="month" id="filterMonth" th:value="${selectedMonth != null ? selectedMonth : ''}">
+          <select class="form-select" onchange="updatePeriodFilter(this)">
+            <option value="">Выберите месяц</option>
+            <option th:each="m : ${availableMonths}"
+                    th:value="${m.split(':')[0]}"
+                    th:text="${m.split(':')[1]}"
+                    th:selected="${m.split(':')[0] == currentPeriodKey}">
+            </option>
+          </select>
+        </form>
+      </div>
+      <!-- Фильтр Категория -->
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Категория</label>
+        <form method="get" class="d-flex gap-2">
+          <input type="hidden" name="year" th:value="${selectedYear != null ? selectedYear : ''}">
+          <input type="hidden" name="month" th:value="${selectedMonth != null ? selectedMonth : ''}">
+          <input type="hidden" name="userId" th:value="${param.userId}">
+          <select name="categoryId" class="form-select" onchange="this.form.submit()">
+            <option value="">Все категории</option>
+            <option th:each="cat : ${categories}"
+                    th:value="${cat.id}"
+                    th:text="${cat.name}"
+                    th:selected="${param.categoryId != null && param.categoryId[0] != null && param.categoryId[0] == cat.id.toString()}">
+            </option>
+          </select>
+        </form>
+      </div>
+      <!-- Фильтр Участник -->
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Участник</label>
+        <form method="get" class="d-flex gap-2">
+          <input type="hidden" name="year" th:value="${selectedYear != null ? selectedYear : ''}">
+          <input type="hidden" name="month" th:value="${selectedMonth != null ? selectedMonth : ''}">
+          <input type="hidden" name="categoryId" th:value="${param.categoryId}">
+          <select name="userId" class="form-select" onchange="this.form.submit()">
+            <option value="">Все участники</option>
+            <option th:each="user : ${familyMembers}"
+                    th:value="${user.id}"
+                    th:text="${user.displayName != null ? user.displayName : user.username}"
+                    th:selected="${param.userId != null && param.userId[0] != null && param.userId[0] == user.id.toString()}">
+            </option>
+          </select>
+        </form>
+      </div>
+      <!-- Кнопка сброса -->
+      <div class="col-md-3 text-end">
+        <a href="/dashboard/transactions" class="btn btn-outline-primary w-100">
+          <i class="fas fa-sync-alt me-1"></i> Сбросить фильтры
+        </a>
+      </div>
+    </div>
+    <!-- ТАБЛИЦА -->
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+        <tr>
+          <th>Дата и время</th>
+          <th>Категория</th>
+          <th>Описание</th>
+          <th>Пользователь</th>
+          <th class="text-end">Сумма</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="t : ${allTransactions}"
+            th:onclick="|window.location='@{/dashboard/transaction/{id}(id=${t.id})}'|">
+          <td>
+            <div class="fw-bold" th:text="${#temporals.format(t.date, 'dd.MM.yyyy')}">01.01.2026</div>
+            <small class="text-muted" th:text="${#temporals.format(t.date, 'HH:mm')}">12:00</small>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark border badge-category"
+                  th:text="${t.category.name}">Категория</span>
+          </td>
+          <td th:text="${t.description ?: '-'}">Описание</td>
+          <td>
+            <small class="text-muted"
+                   th:text="${t.user.displayName != null ? t.user.displayName : t.user.username}">User</small>
+          </td>
+          <td class="text-end">
+            <span class="fw-bold text-danger"
+                  th:text="'-' + ${#numbers.formatDecimal(t.amount, 0, 'COMMA', 2, 'POINT')} + ' ₽'">-0 ₽</span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div th:if="${#lists.isEmpty(allTransactions)}" class="text-center py-5 text-muted">
+      <i class="fas fa-receipt fa-3x mb-3"></i>
+      <p>Транзакций за выбранный период не найдено</p>
+    </div>
+    <div class="mt-3 text-muted small text-center">
+      Найдено записей: <span th:text="${#lists.size(allTransactions)}">0</span>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Функция для разделения периода на год и месяц перед отправкой формы
+  function updatePeriodFilter(selectElement) {
+    const periodKey = selectElement.value;
+    if (!periodKey || periodKey.trim() === '') {
+      window.location.href = '/dashboard/transactions';
+      return;
+    }
+    const parts = periodKey.split('-');
+    if (parts.length === 2) {
+      document.getElementById('filterYear').value = parts[0];
+      document.getElementById('filterMonth').value = parts[1];
+      document.getElementById('periodForm').submit();
+    }
+  }
+  // Восстановление темной темы
+  if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Настройки профиля</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fc; font-family: 'Segoe UI', sans-serif; }
+    .navbar-custom { background: linear-gradient(135deg, #4e73df, #224abe); }
+    .navbar-brand { color: white !important; }
+    .settings-card { max-width: 600px; margin: 50px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-custom mb-4">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="/dashboard"><i class="fas fa-arrow-left me-2"></i>Назад</a>
+    <span class="navbar-text text-white fw-bold">Настройки профиля</span>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="settings-card">
+    <h4 class="mb-4">Личные данные</h4>
+    <div th:if="${param.success}" class="alert alert-success">Профиль успешно обновлен!</div>
+
+    <form th:action="@{/profile/update}" method="post">
+      <div class="mb-3">
+        <label class="form-label">Логин</label>
+        <input type="text" class="form-control" th:value="${user.username}" disabled>
+        <small class="text-muted">Логин изменить нельзя</small>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Отображаемое имя (в семье)</label>
+        <input type="text" name="displayName" class="form-control" th:value="${user.displayName}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Новый пароль (оставьте пустым, чтобы не менять)</label>
+        <input type="password" name="newPassword" class="form-control" placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Сохранить изменения</button>
+    </form>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

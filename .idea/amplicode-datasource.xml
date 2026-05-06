@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AmplicodeJpaDataSourceConfig">
+    <data-sources>
+      <data-source id="f68eeb4e-16db-4ccb-b9f1-df263aae44ea" name="familybudget" url="jdbc:h2:file:~/h2/familybudget" driverClass="org.h2.Driver" />
+    </data-sources>
+    <option name="preferredDataSourceId" value="f68eeb4e-16db-4ccb-b9f1-df263aae44ea" />
+  </component>
+</project>

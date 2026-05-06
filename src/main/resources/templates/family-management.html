@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление семьей | Семейный Бюджет</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root { --bg-color: #f8f9fc; --card-bg: #ffffff; --text-color: #5a5c69; }
+        body.dark-mode { --bg-color: #1a1a2e; --card-bg: #16213e; --text-color: #e0e0e0; }
+        body { background-color: var(--bg-color); font-family: 'Segoe UI', sans-serif; color: var(--text-color); transition: 0.3s; }
+        body.dark-mode .card, body.dark-mode .table { background-color: var(--card-bg); color: var(--text-color); border-color: #0f3460; }
+        .navbar-custom { background: linear-gradient(135deg, #4e73df, #224abe); }
+        .navbar-brand { color: white !important; }
+        .member-card { background: var(--card-bg); border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .role-badge { font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; }
+        .role-owner { background: #4e73df; color: white; }
+        .role-member { background: #1cc88a; color: white; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-custom mb-4">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="/dashboard"><i class="fas fa-arrow-left me-2"></i>Назад</a>
+        <span class="navbar-text text-white fw-bold">Управление семьей</span>
+        <div class="ms-auto">
+            <button class="btn btn-outline-light btn-sm" onclick="document.body.classList.toggle('dark-mode')"><i class="fas fa-moon"></i></button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+    <!-- Уведомления -->
+    <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>Операция выполнена успешно!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <span th:if="${param.error[0] == 'access_denied'}">Доступ запрещен. Только Глава семьи может выполнять это действие.</span>
+        <span th:if="${param.error[0] == 'username_exists'}">Пользователь с таким логином уже существует.</span>
+        <span th:if="${param.error[0] == 'cannot_remove'}">Нельзя удалить Главу семьи.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row">
+        <!-- Список членов семьи -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Члены семьи</h6>
+                </div>
+                <div class="card-body">
+                    <div th:each="member : ${familyMembers}" class="member-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="mb-1" th:text="${member.displayName != null ? member.displayName : member.username}">Имя</h5>
+                                <small class="text-muted">
+                                    <i class="fas fa-at me-1"></i><span th:text="${member.username}">login</span>
+                                    <span class="ms-3" th:if="${member.email}">
+                                        <i class="fas fa-envelope me-1"></i><span th:text="${member.email}">email</span>
+                                    </span>
+                                </small>
+                            </div>
+                            <span class="badge role-badge"
+                                  th:classappend="${member.role == T(com.familybudget.model.Role).OWNER} ? 'role-owner' : 'role-member'"
+                                  th:text="${member.role.title}">Роль</span>
+                        </div>
+
+                        <!-- Форма редактирования (только для Главы) -->
+                        <form th:if="${currentUser.role == T(com.familybudget.model.Role).OWNER && member.id != currentUser.id}"
+                              th:action="@{/family/update-member}" method="post" class="mt-3 row g-2 align-items-end">
+                            <input type="hidden" name="userId" th:value="${member.id}">
+                            <div class="col-md-4">
+                                <label class="form-label small">Отображаемое имя</label>
+                                <input type="text" name="displayName" class="form-control form-control-sm"
+                                       th:value="${member.displayName}" placeholder="Например: Мама" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Роль</label>
+                                <select name="role" class="form-select form-select-sm">
+                                    <option value="MEMBER" th:selected="${member.role == T(com.familybudget.model.Role).MEMBER}">Член семьи</option>
+                                    <option value="OWNER" th:selected="${member.role == T(com.familybudget.model.Role).OWNER}" disabled>Глава семьи</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">OK</button>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                        onclick="confirmDelete([[${member.id}]])">
+                                    <i class="fas fa-trash me-1"></i>Удалить
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Информация для не-главы -->
+                        <div th:if="${currentUser.role != T(com.familybudget.model.Role).OWNER || member.id == currentUser.id}" class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Редактирование доступно только Главе семьи
+                            </small>
+                        </div>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(familyMembers)}" class="text-center py-4 text-muted">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <p>В семье пока нет других участников</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Форма добавления нового члена (только для Главы) -->
+        <div class="col-lg-4" th:if="${currentUser.role == T(com.familybudget.model.Role).OWNER}">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Добавить участника</h6>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/family/add-member}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Логин для входа *</label>
+                            <input type="text" name="username" class="form-control" placeholder="login" required>
+                            <small class="text-muted">Латинские буквы, цифры, без пробелов</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Пароль *</label>
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" required minlength="6">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Отображаемое имя *</label>
+                            <input type="text" name="displayName" class="form-control" placeholder="Например: Мама" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Роль</label>
+                            <select name="role" class="form-select">
+                                <option value="MEMBER">Член семьи</option>
+                                <option value="OWNER" disabled>Глава семьи (только один)</option>
+                            </select>
+                            <small class="text-muted">Глава семьи видит все расходы и может управлять настройками</small>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-plus me-2"></i>Добавить в семью
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Информация о правах -->
+            <div class="card shadow-sm border-0 mt-4 bg-info bg-opacity-10">
+                <div class="card-body">
+                    <h6 class="fw-bold"><i class="fas fa-shield-alt me-2"></i>Права доступа</h6>
+                    <ul class="small mb-0 ps-3">
+                        <li><strong>Глава семьи:</strong> видит все доходы/расходы, управляет лимитами, добавляет участников</li>
+                        <li><strong>Член семьи:</strong> видит общую статистику, добавляет свои расходы</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Подтверждение удаления
+    function confirmDelete(userId) {
+        Swal.fire({
+            title: 'Удалить участника?',
+            text: 'Этот пользователь потеряет доступ к семейному бюджету. Его данные будут удалены.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e74a3b',
+            cancelButtonColor: '#858796',
+            confirmButtonText: 'Да, удалить',
+            cancelButtonText: 'Отмена'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/family/remove-member';
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'userId';
+                input.value = userId;
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    // Темная тема
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Доходы и Цели | Семейный Бюджет</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fc;
+            --card-bg: #ffffff;
+            --text-color: #5a5c69;
+        }
+        body.dark-mode {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --text-color: #e0e0e0;
+        }
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', sans-serif;
+            color: var(--text-color);
+            transition: 0.3s;
+        }
+        body.dark-mode .card,
+        body.dark-mode .table {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-color: #0f3460;
+        }
+        .navbar-custom {
+            background: linear-gradient(135deg, #1cc88a, #147f66);
+        }
+        .navbar-brand {
+            color: white !important;
+        }
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            padding: 20px;
+        }
+        .text-success-custom {
+            color: #1cc88a !important;
+        }
+        .income-item {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .income-item:hover {
+            background-color: rgba(28, 200, 138, 0.1);
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-custom mb-4">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="/dashboard">
+            <i class="fas fa-arrow-left me-2"></i>Назад к дашборду
+        </a>
+        <span class="navbar-text text-white fw-bold">Доходы и Цели</span>
+        <div class="ms-auto">
+            <a href="/dashboard/income/add" class="btn btn-outline-light btn-sm me-2">
+                <i class="fas fa-plus me-1"></i>Добавить доход
+            </a>
+            <button class="btn btn-outline-light btn-sm" onclick="document.body.classList.toggle('dark-mode')">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+
+    <!-- БЛОК ЦЕЛИ НАКОПЛЕНИЯ -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0" style="background: var(--card-bg);">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center" style="background: var(--card-bg); border-bottom: 1px solid var(--border-color);">
+                    <h6 class="m-0 font-weight-bold text-primary">🎯 Цели накопления</h6>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addGoalModal">+ Цель</button>
+                </div>
+                <div class="card-body">
+                    <div class="row" th:each="goal : ${goals}">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold">
+                                    <i th:if="${goal.goalType != null and goal.goalType.name() == 'FAMILY'}" class="fas fa-users me-1 text-primary" title="Семейная цель"></i>
+                                    <i th:if="${goal.goalType != null and goal.goalType.name() == 'PERSONAL'}" class="fas fa-user me-1 text-info" title="Личная цель"></i>
+                                    <i th:if="${goal.goalType == null}" class="fas fa-users me-1 text-primary" title="Семейная цель"></i>
+                                    <span th:text="${goal.name}">Цель</span>
+                                </span>
+                                <span class="text-muted small" th:text="${goal.currentAmount} + ' / ' + ${goal.targetAmount} + ' ₽'">0 / 0</span>
+                            </div>
+                            <div class="progress" style="height: 12px; background: #e9ecef;">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     th:style="'width: ' + ${goal.percent} + '%'"
+                                     aria-valuenow="${goal.percent}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <small class="text-muted" th:text="${goal.percent} + '% достигнуто'">0%</small>
+                                <div>
+                                    <!-- Кнопка Внести  -->
+                                    <button class="btn btn-sm btn-outline-success me-1 contribute-btn"
+                                            th:data-goal-id="${goal.id}"
+                                            th:data-goal-name="${goal.name}"
+                                            th:data-goal-current="${goal.currentAmount}"
+                                            th:data-goal-target="${goal.targetAmount}">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </button>
+                                    <!-- Кнопка Удалить -->
+                                    <form th:action="@{/dashboard/goal/{id}/delete(id=${goal.id})}" method="post" style="display:inline;" onsubmit="return confirm('Вы уверены, что хотите удалить эту цель?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(goals)}" class="text-muted small">Целей пока нет. Создайте первую!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <!-- Уведомление об успехе -->
+        <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>Доход успешно добавлен!
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Фильтр периода -->
+        <div class="row g-3 mb-4 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Период (Месяц)</label>
+                <form method="get" id="incomePeriodForm" class="d-flex gap-2">
+                    <input type="hidden" name="year" id="incomeFilterYear" th:value="${selectedYear}">
+                    <input type="hidden" name="month" id="incomeFilterMonth" th:value="${selectedMonth}">
+                    <select class="form-select" onchange="updateIncomePeriodFilter(this)">
+                        <option value="">Выберите месяц</option>
+                        <option th:each="m : ${availableMonths}"
+                                th:value="${m.split(':')[0]}"
+                                th:text="${m.split(':')[1]}"
+                                th:selected="${m.split(':')[0] == currentPeriodKey}">
+                        </option>
+                    </select>
+                </form>
+            </div>
+            <div class="col-md-8 text-end">
+                <h4 class="mb-0 text-success-custom">
+                    Всего за период: <span th:text="${#aggregates.sum(incomes.![amount])} + ' ₽'">0 ₽</span>
+                </h4>
+            </div>
+        </div>
+
+        <!-- Таблица доходов -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Источник</th>
+                    <th>Описание</th>
+                    <th>Получатель</th>
+                    <th class="text-end">Сумма</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="inc : ${incomes}"
+                    th:onclick="|window.location='@{/dashboard/income/{id}(id=${inc.id})}'|"
+                    class="income-item">
+                    <td>
+                        <div class="fw-bold" th:text="${#temporals.format(inc.date, 'dd.MM.yyyy')}">27.04.2026</div>
+                        <small class="text-muted" th:text="${#temporals.format(inc.date, 'HH:mm')}">14:30</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-success" th:text="${inc.source}">Зарплата</span>
+                    </td>
+                    <td th:text="${inc.description ?: '-'}">Описание</td>
+                    <td th:text="${inc.user.displayName != null ? inc.user.displayName : inc.user.username}">User</td>
+                    <td class="text-end">
+                        <span class="fw-bold text-success"
+                              th:text="'+' + ${#numbers.formatDecimal(inc.amount, 0, 'COMMA', 2, 'POINT')} + ' ₽'">+0 ₽</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Сообщение если нет данных -->
+        <div th:if="${#lists.isEmpty(incomes)}" class="text-center py-5 text-muted">
+            <i class="fas fa-wallet fa-3x mb-3"></i>
+            <p class="mb-0">Извините, но по данному периоду нет информации о доходах</p>
+            <small class="text-muted">Попробуйте выбрать другой месяц или добавьте новый доход</small>
+        </div>
+
+        <div class="mt-3 text-muted small text-center" th:if="${!#lists.isEmpty(incomes)}">
+            Найдено записей: <span th:text="${#lists.size(incomes)}">0</span>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: ДОБАВИТЬ ЦЕЛЬ -->
+<div class="modal fade" id="addGoalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Новая цель накопления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/dashboard/add-goal}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название цели</label>
+                        <input type="text" name="name" class="form-control" placeholder="Например: Отпуск" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Желаемая сумма (₽)</label>
+                        <input type="number" name="target" class="form-control" placeholder="100000" required>
+                    </div>
+
+                    <!-- Выбор типа цели -->
+                    <div class="mb-3">
+                        <label class="form-label">Тип цели</label>
+                        <select name="goalTypeStr" class="form-select" id="goalTypeSelect" onchange="toggleOwnerSelect()">
+                            <option value="FAMILY">Семейная (Общая)</option>
+                            <option value="PERSONAL">Личная</option>
+                        </select>
+                    </div>
+
+                    <!-- Выбор владельца (скрыто по умолчанию, показывается если выбрана Личная) -->
+                    <div class="mb-3" id="ownerSelectDiv" style="display: none;">
+                        <label class="form-label">Владелец цели</label>
+                        <select name="ownerId" class="form-select">
+                            <option th:each="member : ${familyMembers}"
+                                    th:value="${member.id}"
+                                    th:text="${member.displayName != null ? member.displayName : member.username}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать цель</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Внесение денег в цель -->
+<div class="modal fade" id="contributeModal" tabindex="-1" aria-labelledby="contributeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="contributeModalLabel">💰 Внести деньги в цель</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="contributeForm" method="post" action="">
+                <div class="modal-body">
+                    <input type="hidden" id="goalId" name="goalId">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Цель:</label>
+                        <p class="form-text" id="goalNameDisplay" style="font-size: 1.1rem; font-weight: 600; color: #198754;"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="contributionAmount" class="form-label fw-bold">Сумма внесения (₽):</label>
+                        <input type="number" class="form-control form-control-lg" id="contributionAmount" name="amount" step="0.01" min="0.01" placeholder="1000.00" required autofocus>
+                        <div class="form-text">Введите сумму, которую хотите добавить в эту цель</div>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <strong>Текущий прогресс:</strong> <span id="currentProgress"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success">Внести деньги</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Функция для разделения периода на год и месяц перед отправкой формы
+    function updateIncomePeriodFilter(selectElement) {
+        const periodKey = selectElement.value;
+        if (!periodKey || periodKey.trim() === '') {
+            window.location.href = '/dashboard/incomes';
+            return;
+        }
+        const parts = periodKey.split('-');
+        if (parts.length === 2) {
+            document.getElementById('incomeFilterYear').value = parts[0];
+            document.getElementById('incomeFilterMonth').value = parts[1];
+            document.getElementById('incomePeriodForm').submit();
+        }
+    }
+
+    // Функция открытия модального окна для внесения в цель (читает данные из data-атрибутов)
+    function openContributeModal(goalId, goalName, currentAmount, targetAmount) {
+        document.getElementById('goalId').value = goalId;
+        document.getElementById('contributeForm').action = '/dashboard/goal/' + goalId + '/contribute';
+        document.getElementById('goalNameDisplay').textContent = goalName;
+
+        var percent = 0;
+        if (targetAmount > 0) {
+            percent = Math.round((currentAmount / targetAmount) * 100);
+        }
+        document.getElementById('currentProgress').textContent = currentAmount + ' ₽ из ' + targetAmount + ' ₽ (' + percent + '%)';
+        document.getElementById('contributionAmount').value = '';
+
+        var modal = new bootstrap.Modal(document.getElementById('contributeModal'));
+        modal.show();
+    }
+
+    // Обработчик клика по кнопкам "Внести" (читает data-атрибуты)
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.contribute-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var goalId = this.getAttribute('data-goal-id');
+                var goalName = this.getAttribute('data-goal-name');
+                var currentAmount = parseFloat(this.getAttribute('data-goal-current'));
+                var targetAmount = parseFloat(this.getAttribute('data-goal-target'));
+                openContributeModal(goalId, goalName, currentAmount, targetAmount);
+            });
+        });
+    });
+
+    // Функция переключения видимости выбора владельца в модалке создания цели
+    function toggleOwnerSelect() {
+        const type = document.getElementById('goalTypeSelect').value;
+        const ownerDiv = document.getElementById('ownerSelectDiv');
+        if (type === 'PERSONAL') {
+            ownerDiv.style.display = 'block';
+        } else {
+            ownerDiv.style.display = 'none';
+        }
+    }
+
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+</script>
+</body>
+</html>

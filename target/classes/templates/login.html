@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход в систему</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        h2 { color: #333; margin-bottom: 20px; }
+        input[type=text], input[type=password] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        /* Используем input type=submit вместо button tag - это гарантия отправки формы */
+        input[type=submit] { width: 100%; padding: 12px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        input[type=submit]:hover { background-color: #45a049; }
+        .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; }
+        .info { color: #666; font-size: 12px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>💰 Семейный бюджет</h2>
+
+    <!-- Блок ошибки -->
+    <div th:if="${param.error}" class="error">
+        Неверный логин или пароль!
+    </div>
+
+    <div th:if="${param.logout}" class="error" style="color:green; background:#e6ffe6;">
+        Вы успешно вышли.
+    </div>
+
+    <form action="/login" method="post">
+
+        <label for="username" style="display:none;">Логин</label>
+        <input type="text" id="username" name="username" placeholder="Логин (admin)" value="admin" required autofocus>
+
+        <label for="password" style="display:none;">Пароль</label>
+        <input type="password" id="password" name="password" placeholder="Пароль (admin)" value="admin" required>
+
+        <input type="submit" value="ВОЙТИ В СИСТЕМУ">
+    </form>
+
+    <div class="info">
+        Демо-доступ:<br>
+        👤 <b>admin</b> / <b>admin</b>
+    </div>
+</div>
+
+</body>
+</html>

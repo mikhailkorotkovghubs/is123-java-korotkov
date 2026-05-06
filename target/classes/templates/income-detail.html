@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали дохода | Семейный Бюджет</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fc;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .detail-card {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .card-header-custom {
+            background: linear-gradient(135deg, #1cc88a, #147f66);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 15px 15px 0 0;
+            margin: -30px -30px 20px -30px;
+        }
+        .amount-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #858796;
+            font-weight: 600;
+        }
+        .info-value {
+            font-weight: 700;
+            color: #5a5c69;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/dashboard/incomes" class="btn btn-outline-secondary mt-4">
+        <i class="fas fa-arrow-left me-2"></i>Назад к списку
+    </a>
+
+    <div class="detail-card" th:if="${income}">
+        <div class="card-header-custom">
+            <i class="fas fa-arrow-down fa-3x mb-3 opacity-75"></i>
+            <h4 class="mb-0" th:text="${income.source}">Источник</h4>
+            <div class="amount-display text-white"
+                 th:text="'+' + ${#numbers.formatDecimal(income.amount, 0, 'COMMA', 2, 'POINT')} + ' ₽'">+0 ₽</div>
+            <!-- РУССКИЙ ФОРМАТ: день.месяц.год ЧЧ:мм -->
+            <small class="opacity-75" th:text="${#temporals.format(income.date, 'dd.MM.yyyy HH:mm')}">27.04.2026 14:30</small>
+        </div>
+
+        <div class="p-2">
+            <div class="info-row">
+                <span class="info-label">Описание</span>
+                <span class="info-value" th:text="${income.description ?: 'Нет описания'}">Описание</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Получатель</span>
+                <span class="info-value"
+                      th:text="${income.user.displayName != null ? income.user.displayName : income.user.username}">User</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Дата создания</span>
+                <!-- РУССКИЙ ФОРМАТ с секундами -->
+                <span class="info-value"
+                      th:text="${#temporals.format(income.date, 'dd.MM.yyyy HH:mm:ss')}">27.04.2026 14:30:45</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Статус</span>
+                <span class="info-value text-success">
+                    <i class="fas fa-check-circle me-1"></i>Подтверждено
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

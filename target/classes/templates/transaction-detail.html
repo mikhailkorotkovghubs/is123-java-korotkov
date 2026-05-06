@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Детали операции</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fc; font-family: 'Segoe UI', sans-serif; }
+    .detail-card { max-width: 600px; margin: 50px auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+    .card-header-custom { background: linear-gradient(135deg, #4e73df, #224abe); color: white; padding: 30px; text-align: center; }
+    .amount-display { font-size: 2.5rem; font-weight: 700; margin: 10px 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 15px 30px; border-bottom: 1px solid #eee; }
+    .info-label { color: #858796; font-weight: 600; }
+    .info-value { font-weight: 700; color: #5a5c69; }
+    .btn-action { width: 100%; padding: 15px; font-size: 1.1rem; border: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/dashboard/transactions" class="btn btn-outline-secondary mt-4"><i class="fas fa-arrow-left"></i> Назад к списку</a>
+
+  <!-- Сообщение если транзакция не найдена -->
+  <div th:if="${transaction == null}" class="detail-card mt-4">
+    <div class="card-header-custom bg-danger">
+      <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+      <h4 class="mb-0">Транзакция не найдена</h4>
+    </div>
+    <div class="p-4 text-center">
+      <p class="text-muted mb-4">Запрошенная операция не существует или была удалена</p>
+      <a href="/dashboard/transactions" class="btn btn-primary">Вернуться к списку</a>
+    </div>
+  </div>
+
+  <!-- Карточка транзакции -->
+  <div class="detail-card" th:if="${transaction}">
+    <div class="card-header-custom">
+      <i class="fas fa-receipt fa-3x mb-3 opacity-75"></i>
+      <h4 class="mb-0" th:text="${transaction.category.name}">Категория</h4>
+      <div class="amount-display text-danger" th:text="'-' + ${transaction.amount} + ' ₽'">-0 ₽</div>
+      <small class="opacity-75" th:text="${dateFormatted}">Дата</small>
+    </div>
+
+    <div class="p-4">
+      <div class="info-row">
+        <span class="info-label">Описание</span>
+        <span class="info-value" th:text="${transaction.description ?: 'Нет описания'}">Описание</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Пользователь</span>
+        <span class="info-value" th:text="${transaction.user.displayName != null ? transaction.user.displayName : transaction.user.username}">User</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Дата создания</span>
+        <span class="info-value" th:text="${#temporals.format(transaction.date, 'dd MMMM yyyy, HH:mm:ss')}">Дата</span>
+      </div>
+
+      <div class="mt-4 d-grid gap-2">
+        <button class="btn btn-outline-primary btn-action"><i class="fas fa-edit me-2"></i>Редактировать</button>
+        <button class="btn btn-outline-danger btn-action"><i class="fas fa-trash me-2"></i>Удалить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

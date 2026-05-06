@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить доход | Семейный Бюджет</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fc;
+            --card-bg: #ffffff;
+            --text-color: #5a5c69;
+        }
+        body.dark-mode {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --text-color: #e0e0e0;
+        }
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', sans-serif;
+            color: var(--text-color);
+            transition: 0.3s;
+        }
+        body.dark-mode .card {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-color: #0f3460;
+        }
+        .navbar-custom {
+            background: linear-gradient(135deg, #1cc88a, #147f66);
+        }
+        .navbar-brand {
+            color: white !important;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-custom mb-4">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="/dashboard/incomes">
+            <i class="fas fa-arrow-left me-2"></i>Назад к доходам
+        </a>
+        <span class="navbar-text text-white fw-bold">Добавить доход</span>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+    <div class="form-container">
+        <!-- Уведомление об ошибке -->
+        <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>Ошибка при добавлении дохода!
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <form th:action="@{/dashboard/income/add}" method="post">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Сумма (₽) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" name="amount" class="form-control form-control-lg"
+                       placeholder="50000" required autofocus>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Источник дохода <span class="text-danger">*</span></label>
+                <select name="source" class="form-select form-select-lg" required>
+                    <option value="" disabled selected>Выберите источник</option>
+                    <option value="Зарплата">Зарплата</option>
+                    <option value="Премия">Премия</option>
+                    <option value="Фриланс">Фриланс</option>
+                    <option value="Подработка">Подработка</option>
+                    <option value="Инвестиции">Инвестиции</option>
+                    <option value="Подарок">Подарок</option>
+                    <option value="Возврат">Возврат долга</option>
+                    <option value="Другое">Другое</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Получатель <span class="text-danger">*</span></label>
+                <select name="userId" class="form-select form-select-lg" required>
+                    <option value="" disabled selected>Кто получил доход</option>
+                    <option th:each="user : ${familyMembers}"
+                            th:value="${user.id}"
+                            th:text="${user.displayName != null ? user.displayName : user.username}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Дата получения <span class="text-danger">*</span></label>
+                <input type="datetime-local" name="date" class="form-control form-control-lg" required>
+                <small class="text-muted">Формат: день.месяц.год ЧЧ:мм (например, 27.04.2026 14:30)</small>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Описание</label>
+                <textarea name="description" class="form-control" rows="3"
+                          placeholder="Например: Ежемесячная зарплата за апрель"></textarea>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus-circle me-2"></i>Добавить доход
+                </button>
+                <a href="/dashboard/incomes" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-times me-2"></i>Отмена
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+
+    // Установка текущей даты по умолчанию в русском формате
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        // Форматируем для datetime-local input: YYYY-MM-DDTHH:mm
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.querySelector('input[name="date"]').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    });
+</script>
+</body>
+</html>
